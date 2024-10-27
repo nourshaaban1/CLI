@@ -42,4 +42,62 @@ public class CLI {
         }
     }
 
+    public void ls() {
+        File currDir = pwd.toFile();
+        File filesList[] = currDir.listFiles();
+
+        if (filesList == null) {
+            System.out.println("No files found.");
+            return;
+        }
+
+        System.out.println("lastModified                     Length           Name");
+        System.out.println("-------------------              ------           ---------------");
+
+        for (File file : filesList) {
+            if (!file.isHidden()) {
+                System.out.printf("%tF %<tT              %d                %s\n",
+                        file.lastModified(), file.length(), file.getName());
+            }
+        }
+        System.out.print("\n");
+    }
+
+    public void lsr() {
+        File currDir = pwd.toFile();
+        File filesList[] = currDir.listFiles();
+
+        if (filesList == null) {
+            System.out.println("No files found.");
+            return;
+        }
+
+        System.out.println("lastModified                     Length           Name");
+        System.out.println("-------------------              ------           ---------------");
+
+        for(int i = filesList.length - 1;i >= 0;i--) {
+            if(!filesList[i].isHidden()) {
+                System.out.printf("%tF %<tT              %d                %s\n",filesList[i].lastModified(),filesList[i].length(),filesList[i].getName());
+            }
+        }
+        System.out.print("\n");
+    }
+
+    public void lsa() {
+        File currDir = pwd.toFile();
+        File filesList[] = currDir.listFiles();
+
+        if (filesList == null) {
+            System.out.println("No files found.");
+            return;
+        }
+
+        System.out.println("lastModified                     Length           Name");
+        System.out.println("-------------------              ------           ---------------");
+
+        for (File file : filesList) {
+            System.out.printf("%tF %<tT              %d                %s\n",file.lastModified(), file.length(), file.getName());
+        }
+        System.out.print("\n");
+    }
 }

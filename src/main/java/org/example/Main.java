@@ -8,18 +8,27 @@ public class Main {
             System.out.printf(">>> %s> ",cli.pwd());
             Scanner scanner = new Scanner(System.in);
             String command = scanner.nextLine();
+
             int comLength = command.length();
 
-            if(command.equals("quit")) System.exit(0);
+            if(command.equals("exit")) System.exit(0);
 
             if(command.startsWith("mkdir")) {
                 String dir = command.substring(6,comLength);
                     cli.mkdir(dir);
             }
-
             if(command.startsWith("cd")) {
                 String dir = command.substring(3,comLength);
                 cli.cd(dir);
+            }
+            if(command.startsWith("ls")) {
+                cli.ls();
+            }
+            if(command.startsWith("ls -r")) {
+                cli.lsr();
+            }
+            if(command.startsWith("ls -a")) {
+                cli.lsa();
             }
         }
     }
