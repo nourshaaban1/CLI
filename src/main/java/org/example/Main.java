@@ -1,4 +1,5 @@
 package org.example;
+import java.io.IOException;
 import java.util.Scanner;
 
 public class Main {
@@ -34,6 +35,18 @@ public class Main {
                 System.out.println("----");
                 System.out.printf("%s\n",cli.pwd());
                 System.out.println(" ");
+            }
+            if(command.startsWith("touch")) {
+                String dir = command.substring(6,comLength);
+                try {
+                    cli.touch(dir);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            if(command.startsWith("rmdir")) {
+                String dir = command.substring(6,comLength);
+                cli.rmdir(dir);
             }
         }
     }
