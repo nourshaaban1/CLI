@@ -7,7 +7,6 @@ import java.util.Scanner;
 public class CLI {
 
     private Path pwd;
-    private Scanner scanner;
     private boolean deleteDirectoryRecursively(File dir) {
         File[] allContents = dir.listFiles();
         if (allContents != null) {
@@ -16,6 +15,19 @@ public class CLI {
             }
         }
         return dir.delete();
+    }
+
+    // Example 'grep' implementation - searches for lines containing the keyword in `input`
+    private String grep(String input, String pattern) {
+        StringBuilder result = new StringBuilder();
+        String[] lines = input.split("\n");
+
+        for (String line : lines) {
+            if (line.contains(pattern.substring(1,pattern.length() - 1))) {
+                result.append(line).append("\n");
+            }
+        }
+        return result.toString();
     }
 
     public CLI() {pwd = Paths.get("C:\\Users\\Brothers");}
@@ -45,7 +57,6 @@ public class CLI {
                 pwd = pwd.getParent();
                 return true;
             } else {
-                System.out.println("Already at the root directory, cannot go up.");
                 return false;
             }
         } else {
@@ -54,7 +65,6 @@ public class CLI {
                 pwd = targetPath;
                 return true;
             } else {
-                System.out.println("Directory does not exist: " + targetPath);
                 return false;
             }
         }
@@ -88,7 +98,7 @@ public class CLI {
         return output.toString();
     }
 
-    public boolean rmdir(String directory) {
+    public boolean rmdir(String directory, boolean recursive) {
         Path path = pwd.resolve(directory);
         File dir = path.toFile();
 
@@ -97,27 +107,27 @@ public class CLI {
             return false;
         }
 
+        // If recursive, delete all contents directly without prompt
+        // Attempt to delete empty directory if recursive is false
         if (dir.delete()) {
             System.out.println("Directory Successfully Deleted!");
             return true;
         } else {
-            System.out.println("Failed to Delete Directory As It Is Not Empty");
-            System.out.print("Enter (Y/N) To Delete All Files And Subdirectories Within The Directory: ");
-
-            String c = scanner.next().trim();
-            if (c.equalsIgnoreCase("Y")) {
+            if (recursive) {
                 if (deleteDirectoryRecursively(dir)) {
-                    System.out.println("Directory and all contents successfully deleted!\n");
+                    System.out.println("Directory and all contents successfully deleted!");
                     return true;
                 } else {
-                    System.out.println("Failed to delete some contents.\n");
+                    System.out.println("Failed to delete some contents.");
                     return false;
                 }
-            } else {
-                System.out.println("Command Terminated.\n");
-                return false;
             }
         }
+
+
+
+        System.out.println("Failed to delete directory.");
+        return false;
     }
 
     public boolean touch(String filePath) throws IOException {
@@ -207,6 +217,83 @@ public class CLI {
             System.out.println("Failed to write to file.");
             return false;
         }
+    }
+
+    public boolean mv(String source, String destination) {
+        Path sourcePath = pwd.resolve(source);
+        Path destinationPath = pwd.resolve(destination);
+
+        File sourceFile = sourcePath.toFile();
+        File destinationFile = destinationPath.toFile();
+
+        if (!sourceFile.exists()) {
+            System.out.println("Source file/directory does not exist.");
+            return false;
+        }
+
+        // If destination exists and is a directory, move source into the directory
+        if (destinationFile.exists() && destinationFile.isDirectory()) {
+            destinationPath = destinationPath.resolve(sourceFile.getName());
+            destinationFile = destinationPath.toFile();
+            System.out.println("File/Directory Moved successfully.");
+            return sourceFile.renameTo(destinationFile);
+        }
+
+        // Attempt to rename/move the file or directory
+        if (sourceFile.renameTo(destinationFile)) {
+            System.out.println("File/Directory renamed successfully.");
+            return true;
+        } else {
+            System.out.println("Failed to move/rename the file/directory.");
+            return false;
+        }
+    }
+
+    public String executePipedCommands(String command) {
+        String[] commands = command.split("\\|");
+        String input = "";  // Used to hold output from one command and pass it as input to the next
+
+        for (String cmd : commands) {
+            cmd = cmd.trim();
+            String[] cmdParts = cmd.split(" ");
+            String mainCommand = cmdParts[0];
+
+            switch (mainCommand) {
+                case "ls":
+                    input = ls(false, false);
+                    break;
+                case "cat":
+                    if (cmdParts.length > 1) {
+                        input = cat(cmdParts[1]);
+                    } else {
+                        System.out.println("Error: Missing filename for 'cat' command.");
+                        return "Error: Missing filename for 'cat' command.";
+                    }
+                    break;
+                case "echo":
+                    if (cmdParts.length > 1) {
+                        input = echo(cmd.substring(5).trim()); // Skip "echo "
+                    } else {
+                        System.out.println("Error: Missing text for 'echo' command.");
+                        return "Error: Missing text for 'echo' command.";
+                    }
+                    break;
+                case "grep":
+                    if (cmdParts.length > 1) {
+                        input = grep(input, cmdParts[1]); // Assume previous output is piped input
+                    } else {
+                        System.out.println("Error: Missing search term for 'grep' command.");
+                        return "Error: Missing search term for 'grep' command.";
+                    }
+                    break;
+                default:
+                    System.out.println("Error: Unsupported command - " + mainCommand);
+                    return "Error: Unsupported command - " + mainCommand;
+            }
+        }
+
+        System.out.println(input); // Print final output from the last command
+        return input;
     }
 
 }

@@ -1,6 +1,8 @@
 package org.os;
-
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Scanner;
 
 public class Main {
@@ -21,7 +23,7 @@ public class Main {
                     break;
                 }
                 if (command.contains("|")) {
-                    handlePipeCommand(command, cli);
+                    cli.executePipedCommands(command);
                 } else {
                     handleSingleCommand(command, cli);
                 }
@@ -56,8 +58,24 @@ public class Main {
         }
         else if (command.startsWith("rmdir")) {
             String dir = command.substring(6).trim();
-            cli.rmdir(dir);
-        }
+            Path dirPath = Paths.get(dir);
+
+            // Check if the directory is empty
+            boolean isEmptyDirectory = Files.list(dirPath).findAny().isEmpty();
+
+            // If the directory is not empty, prompt user for recursive delete
+            if (!isEmptyDirectory) {
+                System.out.println("Do you want to delete the directory with all the content inside? (Y/N): ");
+                Scanner scanner = new Scanner(System.in);
+                String flag = scanner.nextLine().trim();
+
+                // Attempt to delete only if empty
+                cli.rmdir(dir, flag.equalsIgnoreCase("y"));  // Delete with contents
+            } else {
+                // Directory is empty; delete directly
+                cli.rmdir(dir, false);
+            }
+         }
         else if (command.startsWith("rm")) {
             String fileName = command.substring(3).trim();
             cli.rm(fileName);
@@ -82,49 +100,16 @@ public class Main {
                 System.out.println(cli.cat(fileName));
             }
         }
+        else if(command.startsWith("mv")) {
+            String[] parts = command.split(" ");
+            cli.mv(parts[1],parts[2]);
+        }
         else if (command.equals("help")) {
             displayHelp();
         }
         else {
             System.out.println("Invalid command. Type 'help' for a list of commands.");
         }
-    }
-    private static void handlePipeCommand(String command, CLI cli) {
-        String[] commands = command.split("\\|");
-        String input = ""; // Initialize input for the first command
-
-        for (String cmd : commands) {
-            cmd = cmd.trim();
-            String output;
-
-            if (cmd.startsWith("ls")) {
-                boolean showHidden = cmd.contains("-a");
-                boolean reverseOrder = cmd.contains("-r");
-                output = cli.ls(showHidden, reverseOrder);
-            } else if (cmd.startsWith("cat")) {
-                String fileName = cmd.substring(4).trim();
-                output = cli.cat(fileName);
-            } else if (cmd.startsWith("grep")) {
-                output = handleGrep(input, cmd.substring(5).trim());
-            } else {
-                System.out.println("Invalid command in pipe: " + cmd);
-                return;
-            }
-            input = output;
-        }
-
-        System.out.println(input);
-    }
-
-    private static String handleGrep(String input, String pattern) {
-        StringBuilder result = new StringBuilder();
-        String[] lines = input.split("\n");
-        for (String line : lines) {
-            if (line.contains(pattern.substring(1,pattern.length() - 1))) {
-                result.append(line).append("\n");
-            }
-        }
-        return result.toString();
     }
     private static void handleEcho(String command, CLI cli) {
 //      echo "test" > file.txt
@@ -151,21 +136,26 @@ public class Main {
         boolean showHidden = command.contains("-a");
         boolean reverseOrder = command.contains("-r");
 
+//      ls > t.txt
         if (command.contains(" > ")) {
             int separatorIndex = command.indexOf(" > ");
             String fileName = command.substring(separatorIndex + 3).trim();
             cli.writeToFile(fileName, cli.ls(showHidden, reverseOrder));
-        } else if (command.contains(" >> ")) {
+        }
+//      ls >> t.txt
+        else if (command.contains(" >> ")) {
             int separatorIndex = command.indexOf(" >> ");
             String fileName = command.substring(separatorIndex + 4).trim();
             cli.appendToFile(fileName, cli.ls(showHidden, reverseOrder));
-        } else {
+        }
+        // ls
+        else {
             System.out.println(cli.ls(showHidden, reverseOrder));
         }
     }
 
     private static void displayHelp() {
-        System.out.println("Available Commands:");
+        System.out.println("Available Commands:\n");
         System.out.println("mkdir <directory>   - Create a new directory.");
         System.out.println("cd <directory>      - Change the current directory.");
         System.out.println("ls [-a] [-r]        - List files in the current directory.");
@@ -173,6 +163,7 @@ public class Main {
         System.out.println("touch <file>        - Create a new file.");
         System.out.println("rmdir <directory>   - Remove a directory.");
         System.out.println("rm <file>           - Remove a file.");
+        System.out.println("mv <fileA> <fileB>  - Move a file to direcotry if exists, if not rename it to.");
         System.out.println("cat <file>          - Display the contents of a file.");
         System.out.println("echo <text> > <file> - Overwrite a file with text.");
         System.out.println("echo <text> >> <file> - Append text to a file.");
