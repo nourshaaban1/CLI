@@ -1,4 +1,4 @@
-package org.example;
+package org.os;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.*;
@@ -177,6 +177,10 @@ public class CLI {
         }
 
         return content.toString();
+    }
+
+    public String echo(String text) {
+        return text;
     }
 
     public boolean appendToFile(String fileName, String content) {

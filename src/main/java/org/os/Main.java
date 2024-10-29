@@ -1,4 +1,4 @@
-package org.example;
+package org.os;
 
 import java.io.IOException;
 import java.util.Scanner;
@@ -63,8 +63,24 @@ public class Main {
             cli.rm(fileName);
         }
         else if (command.startsWith("cat")) {
-            String fileName = command.substring(4).trim();
-            System.out.println(cli.cat(fileName));
+//          cat test.txt > file.txt
+            if (command.contains(" > ")) {
+                int separatorIndex = command.indexOf(" > ");
+                String sourceFile = command.substring(4,separatorIndex);
+                String destinationFile = command.substring(separatorIndex + 3).trim();
+                cli.writeToFile(cli.cat(sourceFile), destinationFile + "\n");
+            }
+//          cat test.txt >> file.txt
+            else if (command.contains(" >> ")) {
+                int separatorIndex = command.indexOf(" >> ");
+                String sourceFile = command.substring(4,separatorIndex);
+                String destinationFile = command.substring(separatorIndex + 3).trim();
+                cli.appendToFile(cli.cat(sourceFile), destinationFile + "\n");
+            }
+            else {
+                String fileName = command.substring(4).trim();
+                System.out.println(cli.cat(fileName));
+            }
         }
         else if (command.equals("help")) {
             displayHelp();
@@ -116,17 +132,19 @@ public class Main {
             int separatorIndex = command.indexOf(" > ");
             String text = command.substring(6, separatorIndex - 1).trim();
             String fileName = command.substring(separatorIndex + 3).trim();
-            cli.writeToFile(fileName, text + "\n");
+            cli.writeToFile(fileName, cli.echo(text) + "\n");
         }
 //      echo "test" >> file.txt
         else if (command.contains(" >> ")) {
             int separatorIndex = command.indexOf(" >> ");
             String text = command.substring(6, separatorIndex - 1).trim();
             String fileName = command.substring(separatorIndex + 4).trim();
-            cli.appendToFile(fileName, text + "\n");
-        } else {
+            cli.appendToFile(fileName, cli.echo(text) + "\n");
+        }
+//      echo "Sally 3al naby"
+        else {
             String text = command.substring(6, command.length() - 1).trim();
-            System.out.println(text);
+            System.out.println(cli.echo(text));
         }
     }
     private static void handleLs(String command, CLI cli) {
